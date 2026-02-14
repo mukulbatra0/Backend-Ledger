@@ -1,6 +1,7 @@
 const { compare } = require("bcryptjs");
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
+const emailService = require("../service/email.service")
 
 /**
  * - Register user controller
@@ -40,7 +41,17 @@ async function userRegisterController(req, res) {
     },
     token,
   });
+
+  await emailService.sendRegistermail(
+    user.email,
+    user.name)
 }
+
+
+/**
+ * - Login user controller
+ * - POST /api/auth/login
+ */
 
 async function userLoginController(req, res) {
   const {email, password } = req.body
