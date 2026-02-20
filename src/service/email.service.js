@@ -47,5 +47,6 @@ async function sendRegistermail(userEmail , name) {
 }
 
 module.exports = {
-  sendRegistermail
+  sendRegistermail,
+  sendEmail
 }

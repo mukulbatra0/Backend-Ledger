@@ -15,11 +15,11 @@ async function createTransactionController(req, res) {
   }
 
   //check if fromAccount and toAccount are same
-  const fromUserAccount = await accountModel.findOne({ _id: fromAccount });
+  const fromUserAccount = await accountModel.findOne({ _id: fromAccount }).populate("user");
 
-  const toUserAccount = await accountModel.findOne({ _id: toAccount });
+  const toUserAccount = await accountModel.findOne({ _id: toAccount }).populate("user");
 
-  if (!fromAccount || !toAccount) {
+  if (!fromUserAccount || !toUserAccount) {
     return res.status(400).json({
       message: "Invlid fromAccount or toAccount ",
     });
@@ -53,7 +53,7 @@ async function createTransactionController(req, res) {
       });
     }
   }
-
+  console.log(fromUserAccount.status +"  "+ toUserAccount.status)
   // check account status
   if (
     fromUserAccount.status !== "active" ||
@@ -98,19 +98,19 @@ async function createTransactionController(req, res) {
     transaction:transaction[0]._id
   }], {session})
 
-  transaction.status = "completed"
-  await transaction.save({session}) 
+  transaction[0].status = "completed"
+  await transaction[0].save({session}) 
 
   await session.commitTransaction()
   session.endSession()
 
 
   await emailService.sendEmail(
-    fromUserAccount.email,
+    fromUserAccount.user.email,
     "Transaction completed",
     `Your transaction of ${amount} has been completed successfully`)
   await emailService.sendEmail(
-    toUserAccount.email,
+    toUserAccount.user.email,
     "Transaction received",
     `Your transaction of ${amount} has been received successfully`
   );
@@ -118,7 +118,7 @@ async function createTransactionController(req, res) {
   return res.status(201).json({
     success: true,
     message: "Transaction completed successfully",
-    transaction,
+    transaction: transaction[0],
   });
 
 }
@@ -143,7 +143,7 @@ async function createInitialFundTreansction(req,res){
 
   const fromUserAccount = await accountModel.findOne({
     user: req.user._id
-  })
+  }).populate("user")
   
   if(!fromUserAccount){
     return res.status(400).json({
@@ -185,7 +185,7 @@ async function createInitialFundTreansction(req,res){
 
   return res.status(201).json({
     message:"Transaction completed successfully",
-    transaction
+    transaction: transaction[0]
   })
 }
 

@@ -15,7 +15,7 @@ const accountSchema = new mongoose.Schema(
         values: ["active", "inactive", "closed"],
         message: "account can be active ,incative , closed",
       },
-      default: "ACTIVE",
+      default: "active",
     },
     currency: {
       type: String,
@@ -55,11 +55,12 @@ accountSchema.methods.getBalance = async function (){
 
           }
         }
-      },
-
+      }
+    },
+    {
       $project:{
         _id:0,
-        balance:{$subtract:["$totalDebit","$totalCredit"]}
+        balance:{$subtract:["$totalCredit","$totalDebit"]}
       }
     }
   ])
