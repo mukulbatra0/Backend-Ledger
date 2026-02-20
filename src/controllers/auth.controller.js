@@ -2,6 +2,7 @@ const { compare } = require("bcryptjs");
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const emailService = require("../service/email.service")
+const blacklistModel = require("../models/blacklist.model")
 
 /**
  * - Register user controller
@@ -90,7 +91,48 @@ async function userLoginController(req, res) {
   });
 }
 
+/**
+ * - Logout user controller
+ * - POST /api/auth/logout
+ */
+async function userLogoutController(req, res){
+  const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+  if(!token){
+    return res.status(400).json({
+      success: false,
+      message: "No token provided",
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    
+    // Add token to blacklist
+    await blacklistModel.create({
+      token: token,
+      userId: decoded.userid,
+      blacklistedAt: new Date(),
+      expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days
+    });
+
+    res.clearCookie("token");
+    
+    return res.status(200).json({
+      success: true,
+      message: "User logged out successfully",
+    });
+  } catch (err) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid token",
+    });
+  }
+}
+
 module.exports = {
   userRegisterController,
-  userLoginController
+  userLoginController,
+  userLogoutController
 };
+

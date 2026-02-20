@@ -1,5 +1,6 @@
 const userModel = require("../models/user.model")
 const jwt = require("jsonwebtoken")
+const blacklistModel = require("../models/blacklist.model")
 
 async function authMiddelware(req, res, next){
   const token = req.cookies.token || req.headers.authorization?.split(" ")[1]
@@ -12,8 +13,16 @@ async function authMiddelware(req, res, next){
   }
 
   try{
-    const decoded = jwt.verify(token, process.env.JWT_KEY)
+    // Check if token is blacklisted
+    const isBlacklisted = await blacklistModel.findOne({ token });
+    if(isBlacklisted){
+      return res.status(401).json({
+        success:false,
+        message:"token has been revoked, please login again"
+      })
+    }
 
+    const decoded = jwt.verify(token, process.env.JWT_KEY)
 
     const user = await userModel.findById(decoded.userid)
 
@@ -46,8 +55,16 @@ async function authSystemUserMiddleware(req, res, next){
   }
 
   try{
-    const decoded = jwt.verify(token, process.env.JWT_KEY)
+    // Check if token is blacklisted
+    const isBlacklisted = await blacklistModel.findOne({ token });
+    if(isBlacklisted){
+      return res.status(401).json({
+        success:false,
+        message:"token has been revoked, please login again"
+      })
+    }
 
+    const decoded = jwt.verify(token, process.env.JWT_KEY)
 
     const user = await userModel.findById(decoded.userid).select("+systemUser")
 
